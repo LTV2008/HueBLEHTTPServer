@@ -62,5 +62,83 @@ curl -X POST http://localhost:5000/color \
 ```bash
 curl http://localhost:5000/status
 ```
+## Other GET Endpoints
+
+### Read power state
+```bash
+curl http://localhost:5000/power
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "power": true
+  }
+}
+```
+
+### Read brightness
+```bash
+curl http://localhost:5000/brightness
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "brightness": 200
+  }
+}
+```
+
+### Read color temperature
+```bash
+curl http://localhost:5000/color_temp
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "color_temperature": 250
+  }
+}
+```
+
+### Read color
+```bash
+curl http://localhost:5000/color
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "x": 0.4,
+    "y": 0.5
+  }
+}
+```
+
+### Read all properties at once
+```bash
+curl http://localhost:5000/all
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "power": true,
+    "brightness": 200,
+    "color_temperature": 250,
+    "color": {
+      "x": 0.4,
+      "y": 0.5
+    }
+  }
+}
+```
 
 The server will run on `http://localhost:5000` and wait for requests. Each endpoint automatically handles the asyncio bridging, so you can make requests in any order without worrying about the event loop.
