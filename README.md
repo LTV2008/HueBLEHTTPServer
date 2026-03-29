@@ -20,6 +20,8 @@ pip install flask bleak
 🐧 Linux (BlueZ)
 
 Ubuntu Desktop
+
+Debian with GNOME Desktop Enviroment
     
 Arch (HomeAssistant OS)
     
