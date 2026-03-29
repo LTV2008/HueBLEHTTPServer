@@ -1,0 +1,27 @@
+Usage
+
+First, update the SERVER_URL variable at the top of main() to match your server address:
+
+SERVER_URL = "http://192.168.1.100:5000"
+
+Then run commands:
+
+# Initialize the light
+python3 HueBLEHTTPClient.py init AA:BB:CC:DD:EE:FF
+
+# Control the light
+python3 HueBLEHTTPClient.py on
+python3 HueBLEHTTPClient.py off
+python3 HueBLEHTTPClient.py brightness 200
+python3 HueBLEHTTPClient.py temp 250
+python3 HueBLEHTTPClient.py color 0.5 0.3
+
+# Get current state
+python3 HueBLEHTTPClient.py get-all
+python3 HueBLEHTTPClient.py get-brightness
+python3 HueBLEHTTPClient.py status
+
+# Show help
+python3 HueBLEHTTPClient.py help
+
+The client includes error handling, input validation, and user-friendly feedback with checkmarks (✓) for success and crosses (✗) for errors.
