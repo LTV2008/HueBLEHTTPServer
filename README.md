@@ -3,13 +3,14 @@
     🐍 Python 3.11+
     📶 Bleak 0.19.0+
     📶 bleak-retry-connector
+    💡[HueBLE](https://github.com/flip-dots/HueBLE)
 
 ## Installation
 
 ```bash
 pip install flask bleak
 ```
-HueBLE is already included
+[HueBLE](https://github.com/flip-dots/HueBLE) is already included
 
 ## Supported Operating Systems
 
