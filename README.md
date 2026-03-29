@@ -1,8 +1,11 @@
 ## Requirements
 
 🐍 Python 3.11+
+
 📶 Bleak 0.19.0+
+
 📶 bleak-retry-connector
+
 💡[HueBLE](https://github.com/flip-dots/HueBLE)
 
 ## Installation
@@ -15,12 +18,18 @@ pip install flask bleak
 ## Supported Operating Systems
 
 🐧 Linux (BlueZ)
-    Ubuntu Desktop
-    Arch (HomeAssistant OS)
+
+Ubuntu Desktop
+    
+Arch (HomeAssistant OS)
+    
 🏢 Windows
-    Windows 10
+
+Windows 10 and 11
+
 💾 Mac OSX
-    Maybe?
+
+Maybe?
 
 ## Usage Examples
 
