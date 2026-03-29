@@ -1,4 +1,4 @@
-##Requirements
+## Requirements
 
     🐍 Python 3.11+
     📶 Bleak 0.19.0+
@@ -11,7 +11,7 @@ pip install flask bleak
 ```
 HueBLE is already included
 
-##Supported Operating Systems
+## Supported Operating Systems
 
     🐧 Linux (BlueZ)
         Ubuntu Desktop
