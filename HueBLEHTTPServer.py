@@ -316,6 +316,6 @@ if __name__ == "__main__":
     asyncio_thread = threading.Thread(daemon=True, target=run_asyncio_loop)
     asyncio_thread.start()
     
-    print("Starting HTTP server on http://localhost:5000")
+    print("Starting HTTP server on http://localhost:5000 or your computer's local ip on port 5000")
     print("First, POST to /init with your MAC address")
-    app.run(debug=False, host='localhost', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
