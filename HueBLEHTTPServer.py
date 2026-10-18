@@ -1,15 +1,62 @@
 import asyncio
 from bleak import BleakScanner
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import HueBLE
 import threading
 
 app = Flask(__name__)
 
+# --- Global CORS wrapper (wildcard origin) ---
+# Adds required Access-Control-Allow-* headers to every response
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Max-Age'] = '3600'
+    return response
+
+# Short-circuit preflight OPTIONS requests
+@app.before_request
+def handle_options():
+    if request.method == 'OPTIONS':
+        resp = make_response('')
+        resp.status_code = 204
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        resp.headers['Access-Control-Max-Age'] = '3600'
+        return resp
+# --- end CORS wrapper ---
+
 # Global variables to store light connection
 light = None
 device = None
 loop = None
+
+
+def _sanitize_xy(x, y):
+    """Convert and validate x/y values, and avoid exact 1.0 which some lights reject.
+
+    Returns (xf, yf, error_message). If error_message is None, xf and yf are valid floats.
+    """
+    try:
+        xf = float(x)
+        yf = float(y)
+    except (TypeError, ValueError):
+        return None, None, "X and Y must be numeric between 0.0 and 1.0"
+
+    if not (0.0 <= xf <= 1.0 and 0.0 <= yf <= 1.0):
+        return None, None, "X and Y values must be between 0.0 and 1.0"
+
+    # Some BLE/firmware implementations reject exactly 1.0; nudge down slightly.
+    eps = 1e-4
+    if xf == 1.0:
+        xf = 1.0 - eps
+    if yf == 1.0:
+        yf = 1.0 - eps
+
+    return xf, yf, None
 
 async def initialize_light(mac_addr):
     """Initialize the light connection"""
@@ -47,12 +94,15 @@ async def run_light_command(command, params):
             return True, f"Color temperature set to {temp}"
         
         elif command == "color":
-            x = float(params.get("x", 0.5))
-            y = float(params.get("y", 0.5))
-            if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
-                return False, "X and Y values must be between 0.0 and 1.0"
-            await light.set_colour_xy(x, y)
-            return True, f"Color set to X:{x}, Y:{y}"
+            # Sanitize and validate x/y values, and avoid exact 1.0
+            x_raw = params.get("x", 0.5)
+            y_raw = params.get("y", 0.5)
+            xf, yf, err = _sanitize_xy(x_raw, y_raw)
+            if err:
+                return False, err
+
+            await light.set_colour_xy(xf, yf)
+            return True, f"Color set to X:{xf}, Y:{yf}"
         
         else:
             return False, "Unknown command"
