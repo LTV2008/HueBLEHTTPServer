@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hue BLE Light Controller</title>
+</head>
+<body>
+    <h1>Hue BLE Light Controller</h1>
+    
+    <div id="messageContainer"></div>
+
+    <!-- Initialization Section -->
+    <div>
+        <h2>Connection</h2>
+        <input 
+            type="text" 
+            id="macAddress" 
+            placeholder="Enter MAC address (e.g., AA:BB:CC:DD:EE:FF)"
+        >
+        <button onclick="initializeLight()">Connect</button>
+        <button id="statusBtn" onclick="checkStatus()" disabled>Check Status</button>
+    </div>
+
+    <!-- Power Control -->
+    <div id="powerSection" style="display: none;">
+        <h2>Power</h2>
+        <label>
+            <input type="checkbox" id="powerToggle" onchange="setPower(this.checked)">
+            Power
+        </label>
+        <span id="powerStatus">Off</span>
+    </div>
+
+    <!-- Brightness Control -->
+    <div id="brightnessSection" style="display: none;">
+        <h2>Brightness</h2>
+        <label>
+            Level: <span id="brightnessValue">128</span>
+        </label>
+        <input 
+            type="range" 
+            id="brightnessSlider" 
+            min="0" 
+            max="255" 
+            value="128"
+            oninput="setBrightness(this.value)"
+        >
+    </div>
+
+    <!-- Color Temperature Control -->
+    <div id="colorTempSection" style="display: none;">
+        <h2>Color Temperature</h2>
+        <label>
+            Temperature (Mireds): <span id="colorTempValue">250</span>
+        </label>
+        <input 
+            type="range" 
+            id="colorTempSlider" 
+            min="153" 
+            max="500" 
+            value="250"
+            oninput="setColorTemp(this.value)"
+        >
+    </div>
+
+    <!-- Color XY Control -->
+    <div id="colorSection" style="display: none;">
+        <h2>Color (XY)</h2>
+        <label>
+            X: <input type="number" id="colorX" min="0" max="1" step="0.01" value="0.5">
+        </label>
+        <label>
+            Y: <input type="number" id="colorY" min="0" max="1" step="0.01" value="0.5">
+        </label>
+        <button onclick="setColor()">Set Color</button>
+    </div>
+
+    <!-- Actions -->
+    <div id="actionsSection" style="display: none;">
+        <h2>Actions</h2>
+        <button onclick="refreshAllState()">Refresh All</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+
+        let state = {
+            initialized: false,
+            power: false,
+            brightness: 128,
+            colorTemp: 250,
+            colorX: 0.5,
+            colorY: 0.5
+        };
+
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const messageEl = document.createElement('div');
+            messageEl.textContent = `[${type.toUpperCase()}] ${message}`;
+            container.appendChild(messageEl);
+            
+            setTimeout(() => {
+                messageEl.remove();
+            }, 5000);
+        }
+
+        function showSection(show) {
+            const sections = ['powerSection', 'brightnessSection', 'colorTempSection', 'colorSection', 'actionsSection'];
+            sections.forEach(id => {
+                document.getElementById(id).style.display = show ? 'block' : 'none';
+            });
+            document.getElementById('statusBtn').disabled = !show;
+        }
+
+        async function initializeLight() {
+            const macAddress = document.getElementById('macAddress').value.trim();
+            
+            if (!macAddress) {
+                showMessage('Please enter a MAC address', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/init`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mac_address: macAddress })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    state.initialized = true;
+                    showMessage(data.message, 'success');
+                    showSection(true);
+                    refreshAllState();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage(`Connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                
+                if (data.initialized) {
+                    showMessage('Light is connected', 'success');
+                } else {
+                    showMessage('Light is not initialized', 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function setPower(value) {
+            try {
+                const response = await fetch(`${API_BASE}/power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: value })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    state.power = value;
+                    document.getElementById('powerStatus').textContent = value ? 'On' : 'Off';
+                    showMessage(data.message, 'success');
+                } else {
+                    document.getElementById('powerToggle').checked = !value;
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                document.getElementById('powerToggle').checked = !value;
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function setBrightness(value) {
+            try {
+                const response = await fetch(`${API_BASE}/brightness`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: parseInt(value) })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    state.brightness = parseInt(value);
+                    document.getElementById('brightnessValue').textContent = value;
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function setColorTemp(value) {
+            try {
+                const response = await fetch(`${API_BASE}/color_temp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: parseInt(value) })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    state.colorTemp = parseInt(value);
+                    document.getElementById('colorTempValue').textContent = value;
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function setColor() {
+            const x = parseFloat(document.getElementById('colorX').value);
+            const y = parseFloat(document.getElementById('colorY').value);
+
+            if (x < 0 || x > 1 || y < 0 || y > 1) {
+                showMessage('X and Y must be between 0 and 1', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/color`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x, y })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    state.colorX = x;
+                    state.colorY = y;
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function getPower() {
+            try {
+                const response = await fetch(`${API_BASE}/power`);
+                const data = await response.json();
+
+                if (data.success) {
+                    state.power = data.data.power;
+                    document.getElementById('powerToggle').checked = state.power;
+                    document.getElementById('powerStatus').textContent = state.power ? 'On' : 'Off';
+                }
+            } catch (error) {
+                showMessage(`Error reading power: ${error.message}`, 'error');
+            }
+        }
+
+        async function getBrightness() {
+            try {
+                const response = await fetch(`${API_BASE}/brightness`);
+                const data = await response.json();
+
+                if (data.success) {
+                    state.brightness = data.data.brightness;
+                    document.getElementById('brightnessSlider').value = state.brightness;
+                    document.getElementById('brightnessValue').textContent = state.brightness;
+                }
+            } catch (error) {
+                showMessage(`Error reading brightness: ${error.message}`, 'error');
+            }
+        }
+
+        async function getColorTemp() {
+            try {
+                const response = await fetch(`${API_BASE}/color_temp`);
+                const data = await response.json();
+
+                if (data.success) {
+                    state.colorTemp = data.data.color_temperature;
+                    document.getElementById('colorTempSlider').value = state.colorTemp;
+                    document.getElementById('colorTempValue').textContent = state.colorTemp;
+                }
+            } catch (error) {
+                showMessage(`Error reading color temp: ${error.message}`, 'error');
+            }
+        }
+
+        async function getColor() {
+            try {
+                const response = await fetch(`${API_BASE}/color`);
+                const data = await response.json();
+
+                if (data.success) {
+                    state.colorX = data.data.x;
+                    state.colorY = data.data.y;
+                    document.getElementById('colorX').value = state.colorX;
+                    document.getElementById('colorY').value = state.colorY;
+                }
+            } catch (error) {
+                showMessage(`Error reading color: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshAllState() {
+            showMessage('Refreshing all states...', 'info');
+            await Promise.all([
+                getPower(),
+                getBrightness(),
+                getColorTemp(),
+                getColor()
+            ]);
+            showMessage('All states refreshed', 'success');
+        }
+
+        function disconnect() {
+            state.initialized = false;
+            showSection(false);
+            document.getElementById('macAddress').value = '';
+            showMessage('Disconnected', 'info');
+        }
+    </script>
+</body>
+</html>
+
