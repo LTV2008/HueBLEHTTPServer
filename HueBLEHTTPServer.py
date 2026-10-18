@@ -1,10 +1,33 @@
 import asyncio
 from bleak import BleakScanner
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import HueBLE
 import threading
 
 app = Flask(__name__)
+
+# --- Global CORS wrapper (wildcard origin) ---
+# Adds required Access-Control-Allow-* headers to every response
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Max-Age'] = '3600'
+    return response
+
+# Short-circuit preflight OPTIONS requests
+@app.before_request
+def handle_options():
+    if request.method == 'OPTIONS':
+        resp = make_response('')
+        resp.status_code = 204
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        resp.headers['Access-Control-Max-Age'] = '3600'
+        return resp
+# --- end CORS wrapper ---
 
 # Global variables to store light connection
 light = None
