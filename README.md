@@ -2,6 +2,8 @@
 
 🐍 Python 3.11+
 
+🧪 flask
+
 📶 Bleak 0.19.0+
 
 📶 bleak-retry-connector
